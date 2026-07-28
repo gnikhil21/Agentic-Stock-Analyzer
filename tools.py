@@ -16,11 +16,13 @@ import yfinance as yf
 import feedparser
 from datetime import datetime, timedelta
 from urllib.parse import quote_plus
+from langchain_core.tools import tool
 
 
 # ---------------------------------------------------------------------------
 # TOOL 1: Current price + % change
 # ---------------------------------------------------------------------------
+@tool
 def get_stock_price(ticker: str) -> dict:
     """
     Returns current price, day change %, and volume for a given ticker.
@@ -58,6 +60,7 @@ def get_stock_price(ticker: str) -> dict:
 # ---------------------------------------------------------------------------
 # TOOL 2: Price history (for trend context, e.g. is this a breakout or noise?)
 # ---------------------------------------------------------------------------
+@tool
 def get_price_history(ticker: str, days: int = 30) -> dict:
     """
     Returns OHLC price history for the last N days.
@@ -95,6 +98,7 @@ def get_price_history(ticker: str, days: int = 30) -> dict:
 # ---------------------------------------------------------------------------
 # TOOL 3: News search (free, no API key — Google News RSS)
 # ---------------------------------------------------------------------------
+@tool
 def search_news(query: str, max_results: int = 5) -> list[dict]:
     """
     Fetches recent news headlines for a query using Google News RSS.
@@ -131,6 +135,7 @@ def search_news(query: str, max_results: int = 5) -> list[dict]:
 # ---------------------------------------------------------------------------
 # TOOL 4: Convenience — check your whole watchlist at once
 # ---------------------------------------------------------------------------
+@tool
 def check_watchlist(tickers: list[str], move_threshold: float = 2.0) -> dict:
     """
     Checks price movement for a list of tickers and flags which ones
