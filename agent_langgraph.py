@@ -3,6 +3,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.graph import MessagesState, StateGraph, START, END
 from langgraph.prebuilt import ToolNode, tools_condition
 from langchain_core.messages import SystemMessage, HumanMessage
+from langgraph.checkpoint.memory import InMemorySaver
 import os
 from dotenv import load_dotenv
 
@@ -23,7 +24,11 @@ def model(state: MessagesState):
     
     messages = state["messages"]
     response = llm_with_tools.invoke(messages)
-    print("response from llm:-", response)
+    #print("response from llm:-", response)
+    if response.tool_calls:
+        print("Tool calls made by the model:-", response.tool_calls)
+    else:
+        print("No tool calls made by the model.")
     return {"messages": [response]}
 
 
@@ -35,24 +40,31 @@ graph.add_edge(START, "agent")
 graph.add_conditional_edges("agent", tools_condition)
 
 graph.add_edge("tools", "agent")
-
-agent_graph = graph.compile()
+checkpointer = InMemorySaver()
+agent_graph = graph.compile(checkpointer=checkpointer)
     
 
-def run_agent(user_prompt:str):
+def run_agent(user_prompt:str, thread_id:str = "default_thread"):
     
-    messages = [
-        SystemMessage(content=SYSTEM_INSTRUCTION),
-        HumanMessage(content=user_prompt)
-    ]
+    config = {
+        "configurable": {"thread_id": thread_id}
+    }
     
-    result = agent_graph.invoke({"messages": messages})
-    print("Final Result from agent_graph:-", result)
+    existing_state =agent_graph.get_state(config)
+    new_conversation = not existing_state.values.get("messages")
+    
+    messages = []
+    if new_conversation:
+        messages.append(SystemMessage(content=SYSTEM_INSTRUCTION))
+    messages.append(HumanMessage(content=user_prompt))
+
+    result = agent_graph.invoke({"messages": messages}, config=config)
+    print("Final Result from agent_graph:-", result["messages"][-1].content)
     
     return result
 
-USER_PROMPT = "What's the current price of HINDALCO.NS?"
+USER_PROMPT = "what about tata motors?"
 
-run_agent(USER_PROMPT)
+run_agent(USER_PROMPT, "new_conversation1")
     
     
