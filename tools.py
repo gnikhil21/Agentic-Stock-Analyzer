@@ -157,36 +157,3 @@ def check_watchlist(tickers: list[str], move_threshold: float = 2.0) -> dict:
     return {"all_prices": all_prices, "flagged": flagged}
 
 
-# ---------------------------------------------------------------------------
-# Quick manual test — run this file directly to sanity check the tools
-# ---------------------------------------------------------------------------
-if __name__ == "__main__":
-    watchlist = ["HINDALCO.NS", "HINDCOPPER.NS", "SUZLON.NS", "AMARAJABAT.NS"]
-
-    print("=" * 60)
-    print("1. Checking watchlist prices...")
-    print("=" * 60)
-    result = check_watchlist(watchlist, move_threshold=1.5)
-    for stock in result["all_prices"]:
-        print(stock)
-
-    print("\nFlagged (significant movers):")
-    for stock in result["flagged"]:
-        print(f"  -> {stock['ticker']}: {stock['change_pct']}%")
-
-    print("\n" + "=" * 60)
-    print("2. Fetching news for flagged stocks...")
-    print("=" * 60)
-    for stock in result["flagged"]:
-        name = stock["ticker"].replace(".NS", "")
-        news = search_news(name, max_results=3)
-        print(f"\nNews for {name}:")
-        for article in news:
-            print(f"  - {article['title']} ({article['source']})")
-
-    print("\n" + "=" * 60)
-    print("3. Sample price history (last 5 days, Hindalco)...")
-    print("=" * 60)
-    history = get_price_history("HINDALCO.NS", days=5)
-    for day in history.get("history", []):
-        print(day)
