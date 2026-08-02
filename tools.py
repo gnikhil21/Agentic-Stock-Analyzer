@@ -16,11 +16,13 @@ import yfinance as yf
 import feedparser
 from datetime import datetime, timedelta
 from urllib.parse import quote_plus
+from langchain_core.tools import tool
 
 
 # ---------------------------------------------------------------------------
 # TOOL 1: Current price + % change
 # ---------------------------------------------------------------------------
+@tool
 def get_stock_price(ticker: str) -> dict:
     """
     Returns current price, day change %, and volume for a given ticker.
@@ -58,6 +60,7 @@ def get_stock_price(ticker: str) -> dict:
 # ---------------------------------------------------------------------------
 # TOOL 2: Price history (for trend context, e.g. is this a breakout or noise?)
 # ---------------------------------------------------------------------------
+@tool
 def get_price_history(ticker: str, days: int = 30) -> dict:
     """
     Returns OHLC price history for the last N days.
@@ -95,6 +98,7 @@ def get_price_history(ticker: str, days: int = 30) -> dict:
 # ---------------------------------------------------------------------------
 # TOOL 3: News search (free, no API key — Google News RSS)
 # ---------------------------------------------------------------------------
+@tool
 def search_news(query: str, max_results: int = 5) -> list[dict]:
     """
     Fetches recent news headlines for a query using Google News RSS.
@@ -131,6 +135,7 @@ def search_news(query: str, max_results: int = 5) -> list[dict]:
 # ---------------------------------------------------------------------------
 # TOOL 4: Convenience — check your whole watchlist at once
 # ---------------------------------------------------------------------------
+@tool
 def check_watchlist(tickers: list[str], move_threshold: float = 2.0) -> dict:
     """
     Checks price movement for a list of tickers and flags which ones
@@ -152,36 +157,3 @@ def check_watchlist(tickers: list[str], move_threshold: float = 2.0) -> dict:
     return {"all_prices": all_prices, "flagged": flagged}
 
 
-# ---------------------------------------------------------------------------
-# Quick manual test — run this file directly to sanity check the tools
-# ---------------------------------------------------------------------------
-if __name__ == "__main__":
-    watchlist = ["HINDALCO.NS", "HINDCOPPER.NS", "SUZLON.NS", "AMARAJABAT.NS"]
-
-    print("=" * 60)
-    print("1. Checking watchlist prices...")
-    print("=" * 60)
-    result = check_watchlist(watchlist, move_threshold=1.5)
-    for stock in result["all_prices"]:
-        print(stock)
-
-    print("\nFlagged (significant movers):")
-    for stock in result["flagged"]:
-        print(f"  -> {stock['ticker']}: {stock['change_pct']}%")
-
-    print("\n" + "=" * 60)
-    print("2. Fetching news for flagged stocks...")
-    print("=" * 60)
-    for stock in result["flagged"]:
-        name = stock["ticker"].replace(".NS", "")
-        news = search_news(name, max_results=3)
-        print(f"\nNews for {name}:")
-        for article in news:
-            print(f"  - {article['title']} ({article['source']})")
-
-    print("\n" + "=" * 60)
-    print("3. Sample price history (last 5 days, Hindalco)...")
-    print("=" * 60)
-    history = get_price_history("HINDALCO.NS", days=5)
-    for day in history.get("history", []):
-        print(day)
