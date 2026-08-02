@@ -5,6 +5,7 @@ from langgraph.prebuilt import ToolNode, tools_condition
 from langchain_core.messages import SystemMessage, HumanMessage
 from langgraph.checkpoint.memory import InMemorySaver
 from langchain_chroma import Chroma
+from prompts import EXTRACT_INFORMATION_TEMPLATE, SYSTEM_INSTRUCTION
 import os, json, uuid
 from dotenv import load_dotenv
 
@@ -15,35 +16,14 @@ TOOLS = [get_price_history, get_stock_price, search_news]
 llm = ChatGoogleGenerativeAI(model="gemini-3.1-flash-lite", temperature=0.3)
 llm_with_tools = llm.bind_tools(TOOLS)
 
-SYSTEM_INSTRUCTION = (
-    "You are a financial monitoring assistant. You have tools to check stock "
-    "prices, price history, and news. Answer user queries based on the tools available. Be concise and "
-    "cite what you found."
-)
-
-EXTRACT_INFORMATION_TEMPLATE = """
-Below is one turn of a conversation with a stock \
-monitoring assistant. Decide if it reveals any DURABLE fact about the user \
-worth remembering for future conversations. This could include: their interests, preferences, or any other information that could help the assistant provide better answers in the future.
-
-Do NOT extract: one-off questions, routine price checks, or anything that's 
-only relevant to this single turn.
-
-USER SAID : {user_prompt}
-ASSISTANT ANSWERED : {model_response}
-
-Extracted information should be returned only in JSON format with the following structure:
-{{memories: [list of relevant information strings]}}
-Return an empty list if there is no relevant information to store.
-"""
-
-embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001")
+embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001", task_type="SEMANTIC_SIMILARITY")
 
 memory_store = Chroma(
     collection_name="stock_agent_memory",
     embedding_function=embeddings,
-    persist_directory="./stock_agent_memory_store"
+    persist_directory="./stock_agent_memory_db"
 )
+
 
 def retrieve_memory(query: str, top_k: int = 3, user_id: str = "test2") -> list[str]:
     """
@@ -64,7 +44,7 @@ def retrieve_memory(query: str, top_k: int = 3, user_id: str = "test2") -> list[
     return []
 
 
-def memory_similarity(new_memory: str, user_id: str = "test2", threshold: float = 0.3) -> bool:
+def memory_similarity(new_memory: str, user_id: str = "test2", threshold: float = 0.2) -> bool:
     """
     Check if a new memory entry is similar to any existing memory entries for a user.
 
@@ -113,7 +93,7 @@ def extract_and_store_memory(user_prompt: str, model_response: str, user_id: str
         else:
             print(f"No new relevant memories to store for user {user_id}.")
     else:
-        print(f"No relevant memories extracted for user {user_id}.")
+        print(f"No relevant memories to store for user {user_id}.")
         
 
 def model(state: MessagesState):
@@ -153,7 +133,10 @@ def run_agent(user_prompt:str, thread_id:str = "default_thread", user_id:str = "
     messages = []
     
     if retrieved_memory:
-        memory_context = "Relevant context remembered about this user from past conversations:\n"    
+        memory_context = ("Relevant context remembered about this user from past conversations "
+                            "(This is only for background information, do not call tools based on this information."
+                            "Tools should be called only based on the user prompt):\n"
+                          )    
         memory_context += "\n".join(
             f"- {memory}" for memory in retrieved_memory
         )
@@ -167,7 +150,7 @@ def run_agent(user_prompt:str, thread_id:str = "default_thread", user_id:str = "
     messages.append(HumanMessage(content=user_prompt + memory_context))
 
     result = agent_graph.invoke({"messages": messages}, config=config)
-    print("Final Result from agent_graph:-", result["messages"][-1].content)
+    print("Final Result from agent_graph:-", result["messages"][-1].content[0]["text"])
     
     extract_and_store_memory(user_prompt, result["messages"][-1].content, user_id)
     
@@ -175,5 +158,5 @@ def run_agent(user_prompt:str, thread_id:str = "default_thread", user_id:str = "
 
 USER_PROMPT = "I've also started keeping an eye on IT sector stocks recently, in addition to my usual picks."
 
-run_agent(USER_PROMPT, user_id="test5")
+run_agent(USER_PROMPT, user_id="test8")
     
