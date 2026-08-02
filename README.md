@@ -1,25 +1,34 @@
-Agentic Stock Analysis Assistant
+AI Financial Research Agent
 
-An AI-powered stock analysis assistant built using Google Gemini Function Calling that autonomously invokes external tools to answer stock market queries. Instead of relying solely on the LLM's internal knowledge, the agent dynamically decides which tools to use, retrieves live financial data, and combines the results to generate context-aware responses.
+An intelligent financial research assistant built using LangGraph and Google Gemini that answers stock market queries through autonomous tool execution and persistent semantic memory.
+The agent combines tool calling, conversational reasoning, and long-term vector memory to provide personalized responses based on both live financial data and previously learned user preferences.
 
 Features
-- Retrieve real-time stock prices for NSE-listed companies.
-- Fetch historical OHLC price data for user-specified time periods.
-- Search recent company and market news using Google News RSS.
-- Autonomous tool selection through Gemini Function Calling.
-- Modular architecture for easily integrating additional financial analysis tools.
+- AI-powered conversational stock analysis.
+- Real-time stock prices using Yahoo Finance.
+- Historical OHLC price history for custom time periods.
+- Latest company and market news via Google News RSS.
+- Autonomous tool selection using Gemini Function Calling.
+- Long-term semantic memory using ChromaDB and Gemini Embeddings.
+- Automatic extraction and storage of durable user preferences.
+- Memory deduplication through embedding similarity search.
+- Modular LangGraph workflow designed for future extension with additional financial analysis tools.
 
 Tech Stack
 - Python
-- Google Gemini API
-- Function Calling
+- LangGraph
+- Google Gemini 3.1 Flash Lite
+- Gemini Embeddings
+- LangChain
+- ChromaDB
 - yFinance
 - Google News RSS
-- Python Tool Orchestration
+- Function Calling
 
 Example Queries
 - What is the current price of BEL.NS?
-- Show me the last 30 days of price history for HINDALCO.NS.
-- Why is Suzlon Energy moving today?
-- Give me the latest news for Tata Motors.
-- Compare today's price with the last week's trend for Infosys.
+- Show me the last 60 days of Tata Motors.
+- Why is Reliance moving today?
+- Based on my previous investment preferences, suggest some Indian semiconductor stocks.
+- What stocks have I shown interest in before?
+- Give me the latest news for Hindalco.
